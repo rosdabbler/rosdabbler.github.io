@@ -81,6 +81,7 @@ sudo apt-get install -y \
 
 # enable forwarding
 echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/99-ipforward.conf
+sudo sysctl -w net.ipv4.ip_forward=1
 
 # stuff I want for AWS installs
 sudo hostnamectl set-hostname openvpn
