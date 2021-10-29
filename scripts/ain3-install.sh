@@ -37,6 +37,7 @@ echo \
 # Install Docker engine
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+sudo usermod -aG docker ubuntu
 
 ## Install ROS2
 
@@ -87,7 +88,8 @@ sudo apt-get install -y \
   bridge-utils \
   dnsutils \
   iputils-ping \
-  net-tools
+  net-tools \
+  lsof
 
 # enable forwarding
 echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/99-ipforward.conf
