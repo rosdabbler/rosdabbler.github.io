@@ -36,7 +36,7 @@ echo \
 
 # Install Docker engine
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
 ## Install ROS2
 
@@ -86,7 +86,8 @@ fi
 sudo apt-get install -y \
   bridge-utils \
   dnsutils \
-  iputils-ping
+  iputils-ping \
+  net-tools
 
 # enable forwarding
 echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/99-ipforward.conf
@@ -94,5 +95,8 @@ echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/99-ipforward.conf
 # hostname
 sudo hostnamectl set-hostname openvpn
 
-# the previous directory
+# set the default OPEN_URL with the current IP address
+export OPENVPN_URL=$(curl icanhazip.com)
+
+# go back to the previous directory
 cd -
