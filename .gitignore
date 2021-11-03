@@ -1,0 +1,4 @@
+_site
+.sass-cache
+.jeykll-metadata
+Gemfile.lock
