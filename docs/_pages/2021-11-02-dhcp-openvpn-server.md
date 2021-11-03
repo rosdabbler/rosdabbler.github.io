@@ -40,7 +40,7 @@ Parsed OK, no tap0 created. As I expected. Now configure and start openvpn.
 sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D
 sudo ovpn_initpki
 sudo easyrsa build-client-full ros_local_gateway nopass
-sudo ovpn_getclient ros_local_gateway > ros_local_gateway.ovp
+sudo ovpn_getclient ros_local_gateway > ros_local_gateway.ovpn
 sudo systemctl start openvpn@openvpn
 ```
 With that, I get:
