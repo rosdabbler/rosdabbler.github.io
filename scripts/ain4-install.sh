@@ -1,4 +1,5 @@
-#!/bin/bash
+# usage:
+# source ain4.install
 #
 # Install script starting for aws openvpn test
 #
@@ -13,13 +14,38 @@ sudo systemctl set-default multi-user
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
 
 # Stuff we need to do install, or to fix if interrupted
-sudo apt install -y nano git wget curl
+sudo apt install -y nano git wget curl less
 
-# set the default OPEN_URL with the current IP address
-if [[ -z "$OPENVPN_URL" ]]; then
-    OPENVPN_URL=$(curl icanhazip.com)
-    echo "OPENVPN_URL is $OPENVPN_URL"
-fi
+# netplan configuration to create the bridge that ROS2 will use
+cat << 'EOF' | sudo tee /etc/netplan/90-rosbridge.yaml
+network:
+  version: 2
+
+  bridges:
+    rosbridge:
+      mtu: 1500
+      parameters:
+        stp: false
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: false
+        use-routes: false
+      dhcp6: false
+EOF
+# go ahead and create the bridge
+sudo netplan apply
+
+# Configuration file for Cyclone DDS to use the bridge
+cat << 'EOF' > ./cyclonedds-rosbridge.xml
+<?xml version="1.0" encoding="UTF-8" ?>
+  <CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+    <Domain id="any">
+        <General>
+            <NetworkInterfaceAddress>rosbridge</NetworkInterfaceAddress>
+        </General>
+    </Domain>
+  </CycloneDDS>
+EOF
 
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 
@@ -71,7 +97,7 @@ fi
 sudo apt-get install -y \
   openvpn easy-rsa
 
-# Other commands from openvpn Dockerfile
+# Other commands from kylemanna/openvpn
 sudo cp -r docker-openvpn/bin/* /usr/local/bin/
 sudo chmod a+x /usr/local/bin/*
 sudo ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin
@@ -83,6 +109,7 @@ OPENVPN=/etc/openvpn
 EASYRSA=/usr/share/easy-rsa
 EASYRSA_CRL_DAYS=3650
 EASYRSA_PKI=/etc/openvpn/pki
+CYCLONEDDS_URI=file://$PWD/cyclonedds-rosbridge.xml
 EOF
 fi
 
@@ -101,56 +128,23 @@ sudo sysctl -w net.ipv4.ip_forward=1
 # hostname
 sudo hostnamectl set-hostname rosovpn
 
-# create the up.sh file that will run when link comes up
-sudo mkdir -p /etc/openvpn
-cat <<END | sudo tee /etc/openvpn/up.sh > /dev/null
-#!/bin/bash
-#
-# This is run when device comes up
-#
-#mkdir -p /var/log/rovpn
-#env >> /var/log/rovpn/up.log
-ip link set master rosbridge dev $dev
-ip link set rosbridge up
-ip link set $dev up
-END
-
-# create the file create a bridge for the OpenVPN tap0 interface
-cat <<END | sudo tee /etc/netplan/90-rosbridge.yaml > /dev/null
-network:
-  version: 2
-  bridges:
-    rosbridge:
-      mtu: 1500
-      parameters:
-        stp: false
-      dhcp4: true
-      dhcp6: false
-END
-
-# apply to create the bridge
-sudo netplan apply
-
 # Configure OpenVPN
-sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D
-# 
 
-# Initialize the easy-rsa local certificate authority.
-echo "Initializing the certificate authority. You'll need to create a password and"
-echo "remember it."
+# set the default OPEN_URL with the current IP address
+if [[ -z "$OPENVPN_URL" ]]; then
+    OPENVPN_URL=$(curl icanhazip.com)
+    echo "OPENVPN_URL is $OPENVPN_URL"
+fi
+
+# OpenVPN configuration.
+UP_COMMAND="/bin/bash -c 'ip link set master rosbridge dev tap0 && ip link set up tap0'"
+sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D \
+  -e "ifconfig-noexec" \
+  -e "script-security 2" \
+  -e "up \"${UP_COMMAND}\"" \
+  -E "ifconfig-noexec" \
+  -E "script-security 2" \
+  -E "up \"${UP_COMMAND}\""
+
+# start the initialization of the certificate server
 sudo ovpn_initpki
-#
-
-# Prepare the client configuration file
-echo "Creating the client file. You'll need to enter the certificate authority password"
-echo "from the previous step."
-sudo easyrsa build-client-full ros_local_gateway nopass
-sudo ovpn_getclient ros_local_gateway > ros_local_gateway.ovpn
-
-# Start and enable OpenVPN using the default openvpn scripts
-sudo systemctl enable openvpn@openvpn
-sudo systemctl start openvpn@openvpn
-
-echo "OpenVPN started. View log with:"
-echo "sudo journalctl --unit openvpn@openvpn"
-cd -
