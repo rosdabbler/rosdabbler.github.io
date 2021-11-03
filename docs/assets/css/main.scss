@@ -1,0 +1,30 @@
+---
+# Only the main Sass file needs front matter (the dashes are enough)
+---
+
+@charset "utf-8";
+// BEGIN RKJ OVERRIDE
+// This did not work
+//$doc-font-size: 10;
+// but this did
+//$text-color: #fc3a52;
+// END RKJ OVERRIDE
+@import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
+@import "minimal-mistakes"; // main partials
+
+// See https://github.com/mmistakes/minimal-mistakes/discussions/1219
+html {
+    font-size: 12px; // change to whatever
+  
+    @include breakpoint($medium) {
+      font-size: 14px; // change to whatever
+    }
+  
+    @include breakpoint($large) {
+      font-size: 16px; // change to whatever
+    }
+  
+    @include breakpoint($x-large) {
+      font-size: 18px; // change to whatever
+    }
+  }

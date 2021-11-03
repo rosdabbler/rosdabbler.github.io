@@ -16,7 +16,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
 sudo apt install -y nano git wget curl
 
 # set the default OPEN_URL with the current IP address
-if [[-z "$OPENVPN_URL" ]]; then
+if [[ -z "$OPENVPN_URL" ]]; then
     OPENVPN_URL=$(curl icanhazip.com)
     echo "OPENVPN_URL is $OPENVPN_URL"
 fi
@@ -115,7 +115,7 @@ ip link set rosbridge up
 ip link set $dev up
 END
 
-# create the file to persist the bridge if Docker not started
+# create the file create a bridge for the OpenVPN tap0 interface
 cat <<END | sudo tee /etc/netplan/90-rosbridge.yaml > /dev/null
 network:
   version: 2
@@ -131,12 +131,26 @@ END
 # apply to create the bridge
 sudo netplan apply
 
-# create the Docker version of the bridge
-#sudo docker network create --driver=bridge \
-#  --subnet=$ROVPN_SUBNET \
-#  --ip-range=$ROVPN_CLOUD_GATEWAY_DOCKER_IPS \
-#  --gateway=$ROVPN_CLOUD_GATEWAY \
-#  --opt com.docker.network.bridge.name=rosbridge \
-#  rosbridge
-# go back to the previous directory
+# Configure OpenVPN
+sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D
+# 
+
+# Initialize the easy-rsa local certificate authority.
+echo "Initializing the certificate authority. You'll need to create a password and"
+echo "remember it."
+sudo ovpn_initpki
+#
+
+# Prepare the client configuration file
+echo "Creating the client file. You'll need to enter the certificate authority password"
+echo "from the previous step."
+sudo easyrsa build-client-full ros_local_gateway nopass
+sudo ovpn_getclient ros_local_gateway > ros_local_gateway.ovpn
+
+# Start and enable OpenVPN using the default openvpn scripts
+sudo systemctl enable openvpn@openvpn
+sudo systemctl start openvpn@openvpn
+
+echo "OpenVPN started. View log with:"
+echo "sudo journalctl --unit openvpn@openvpn"
 cd -

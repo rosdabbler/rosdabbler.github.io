@@ -1,4 +1,4 @@
-_site
-.sass-cache
-.jeykll-metadata
-Gemfile.lock
+docs/_site
+docs/.sass-cache
+docs/.jeykll-metadata
+docs/Gemfile.lock
