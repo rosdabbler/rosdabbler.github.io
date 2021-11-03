@@ -5,6 +5,7 @@ author_profile: true
 resource: true
 categories: [openvpn]
 date: 2021-11-03
+permalink: /2021-11-03-more-openvpn-dhcp-tweaks/
 ---
 Continuing from [yesterday](/2021-11-02-dhcp-openvpn-server/), I want to make a standard install plan for an OpenVPN AWS gateway that pulls its IP address from the local (robot) network.
 
