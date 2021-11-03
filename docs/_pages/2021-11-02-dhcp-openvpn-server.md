@@ -5,6 +5,7 @@ author_profile: true
 resource: true
 categories: [openvpn]
 date: 2021-11-01
+permalink: /2021-11-02-dhcp-openvpn-server/
 ---
 To extend a simple local robot network using a local DHCP server, I would like for the OpenVPN server bridge to get is IP address from the local DHCP server. How to do that?
 
