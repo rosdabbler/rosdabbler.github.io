@@ -57,7 +57,9 @@ if [[ ! "$ROSVPN_SKIP" = "true" ]]; then
         lsb-release
 
     # Add Docker's official GPG key
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    if [[ ! -f /usr/share/keyrings/docker-archive-keyring.gpg ]]; then
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    fi
 
     # Setup Docker repository
     echo \
@@ -74,7 +76,9 @@ fi
 
 if [[ ! "$ROSVPN_SKIP_ROS2" = "true" ]]; then
     # Ref: https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html
-    sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg
+    if [[ ! -f /usr/share/keyrings/ros-archive-keyring.gpg ]]; then
+      sudo -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+    fi
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
     sudo apt update && sudo apt install -y ros-galactic-desktop
 
@@ -137,6 +141,7 @@ if [[ -z "$OPENVPN_URL" ]]; then
 fi
 
 # OpenVPN configuration.
+sudo rm /etc/openvpn/ovpn_env.sh
 UP_COMMAND="/bin/bash -c 'ip link set master rosbridge dev tap0 && ip link set up tap0'"
 sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D \
   -e "ifconfig-noexec" \
@@ -146,5 +151,11 @@ sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D \
   -E "script-security 2" \
   -E "up \"${UP_COMMAND}\""
 
-# start the initialization of the certificate server
-sudo ovpn_initpki
+# Initialization of the certificate server
+if [[ ! -d /etc/openvpn/pki ]]; then
+  echo ""
+  echo "Certificate service initialization. You'll need to create some passwords"
+  sudo ovpn_initpki
+else
+  echo "PKI already present, skipping initialization"
+fi
