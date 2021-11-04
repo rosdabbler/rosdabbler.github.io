@@ -1,0 +1,15 @@
+network:
+  version: 2
+  ethernets:
+    estar:
+      match:
+        name: "e*"
+
+  bridges:
+    rosbridge:
+      mtu: 1500
+      interfaces: [estar]
+      parameters:
+        stp: false
+      dhcp4: true
+      dhcp6: false
