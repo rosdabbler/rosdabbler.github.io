@@ -3,6 +3,19 @@
 #
 # Install script starting for aws openvpn test
 #
+# The following variables may be set before sourcing this script for a few options.
+# Uncomment and set if desired. Note that the values shown are not defaults, but
+# examples.
+#
+# Skip installation of ROS2. Default: undefined (false)
+#ROSVPN_SKIP_ROS2=true
+#
+# Skip installation of Docker. Default: undefined (false)
+#ROSVPN_SKIP_DOCKER=true
+#
+# Use a DNS string for the URL to this VPN gateway (default: current IP address)
+#OPENVPN_URL=vpn.rosdabbler.com
+#
 
 sudo apt-get update && sudo apt-get upgrade -y
 
@@ -35,22 +48,10 @@ EOF
 # go ahead and create the bridge
 sudo netplan apply
 
-# Configuration file for Cyclone DDS to use the bridge
-cat << 'EOF' > ./cyclonedds-rosbridge.xml
-<?xml version="1.0" encoding="UTF-8" ?>
-  <CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
-    <Domain id="any">
-        <General>
-            <NetworkInterfaceAddress>rosbridge</NetworkInterfaceAddress>
-        </General>
-    </Domain>
-  </CycloneDDS>
-EOF
-
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 
 # Docker prelims
-if [[ ! "$ROSVPN_SKIP" = "true" ]]; then
+if [[ ! "$ROSVPN_SKIP_DOCKER" = true ]]; then
     sudo apt-get install \
         ca-certificates \
         gnupg \
@@ -74,7 +75,7 @@ fi
 
 ## Install ROS2
 
-if [[ ! "$ROSVPN_SKIP_ROS2" = "true" ]]; then
+if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
     # Ref: https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html
     if [[ ! -f /usr/share/keyrings/ros-archive-keyring.gpg ]]; then
       sudo -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
@@ -106,18 +107,18 @@ sudo cp -r docker-openvpn/bin/* /usr/local/bin/
 sudo chmod a+x /usr/local/bin/*
 sudo ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin
 
-# Add openvpn environment variables
+# Add openvpn environment variables, and tell Cyclone DDS to use rosbridge
 if ! grep -q -F "OPENVPN" /etc/environment; then
 cat <<EOF | sudo tee -a /etc/environment
 OPENVPN=/etc/openvpn
 EASYRSA=/usr/share/easy-rsa
 EASYRSA_CRL_DAYS=3650
 EASYRSA_PKI=/etc/openvpn/pki
-CYCLONEDDS_URI=file://$PWD/cyclonedds-rosbridge.xml
+CYCLONEDDS_URI='<General><NetworkInterfaceAddress>rosbridge</></>'
 EOF
 fi
 
-# Additional packages which to help configure or debug networking
+# Additional packages which may help configure or debug networking
 sudo apt-get install -y \
   bridge-utils \
   dnsutils \
@@ -132,15 +133,17 @@ sudo sysctl -w net.ipv4.ip_forward=1
 # hostname
 sudo hostnamectl set-hostname rosovpn
 
-# Configure OpenVPN
-
 # set the default OPEN_URL with the current IP address
 if [[ -z "$OPENVPN_URL" ]]; then
     OPENVPN_URL=$(curl icanhazip.com)
     echo "OPENVPN_URL is $OPENVPN_URL"
 fi
 
-# OpenVPN configuration.
+# OpenVPN configuration using the Docker scripts, adapted for local use.
+#
+# You can also look at https://github.com/kylemanna/docker-openvpn/blob/master/bin/ovpn_genconfig
+# to see the meaning of various setup options.
+#
 sudo rm /etc/openvpn/ovpn_env.sh
 UP_COMMAND="/bin/bash -c 'ip link set master rosbridge dev tap0 && ip link set up tap0'"
 sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D \
@@ -153,8 +156,9 @@ sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D \
 
 # Initialization of the certificate server
 if [[ ! -d /etc/openvpn/pki ]]; then
-  echo ""
+  echo " "
   echo "Certificate service initialization. You'll need to create some passwords"
+  echo " "
   sudo ovpn_initpki
 else
   echo "PKI already present, skipping initialization"

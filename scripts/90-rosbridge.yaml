@@ -6,7 +6,7 @@ network:
         name: "e*"
 
   bridges:
-    rosbridge:
+    rosbridge:https://raw.githubusercontent.com/rosdabbler/rosdabbler.github.io/main/scripts/90-rosbridge.yaml
       mtu: 1500
       interfaces: [estar]
       parameters:
