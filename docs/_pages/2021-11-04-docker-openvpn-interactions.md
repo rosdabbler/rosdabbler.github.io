@@ -156,7 +156,7 @@ target     prot opt source               destination
 ACCEPT     all  --  anywhere             anywhere            
 ubuntu@ip-172-31-23-190:~$ sudo netfilter-persistent save
 ```
-reboot. Did not work :(v I see, /usr/share/netfilter-persistent/plugins.d has no plugins. Apparently the plugin is part of iptables-persistent. OK, try a suppressed install of iptables-persistent:
+reboot. Did not work :( I see, /usr/share/netfilter-persistent/plugins.d has no plugins. Apparently the plugin is part of iptables-persistent. OK, try a suppressed install of iptables-persistent:
 ```bash
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
 ```

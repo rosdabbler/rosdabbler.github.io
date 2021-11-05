@@ -50,8 +50,8 @@ sudo netplan apply
 
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 
-# Docker prelims
 if [[ ! "$ROSVPN_SKIP_DOCKER" = true ]]; then
+    # Docker prelims
     sudo apt-get install \
         ca-certificates \
         gnupg \
@@ -78,7 +78,7 @@ fi
 if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
     # Ref: https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html
     if [[ ! -f /usr/share/keyrings/ros-archive-keyring.gpg ]]; then
-      sudo -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+      sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
     fi
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
     sudo apt update && sudo apt install -y ros-galactic-desktop
@@ -91,6 +91,16 @@ if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
         echo "$ROS2_SOURCE" >> ~/.bashrc
     fi
 fi
+
+# When Docker is running, it sets the default acceptance of the FORWARD chain to DENY,
+# and loads the **br_netfilter** kernel module so that layer 2 forwards on the bridge
+# go through the iptables FORWARD chain. The net result is that unless we explictly allow
+# rosbridge forwards in iptables, they will fail. The following section will fix that.
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
+sudo iptables -F DOCKER-USER 2> /dev/null || sudo iptables -N DOCKER-USER
+sudo iptables -A DOCKER-USER -i rosbridge -o rosbridge -j ACCEPT
+sudo iptables -A DOCKER-USER -j RETURN
+sudo iptables-save -f /etc/iptables/rules.v4
 
 # Download kylemanna/openvpn docker install which has some nice scripts we will be using
 if [ ! -d docker-openvpn ]; then
