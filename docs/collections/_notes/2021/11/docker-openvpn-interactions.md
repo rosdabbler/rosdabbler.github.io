@@ -1,17 +1,15 @@
 ---
 title: "Docker-OpenVPN interactions"
-layout: single
+layout: archive
 author_profile: true
-resource: true
-categories: [openvpn, docker]
+tags: [openvpn, docker]
 date: 2021-11-04
-permalink: /2021-11-04-docker-openvpn-interactions/
 ---
-I though I was done with my OpenVPN configuration - but then I had failures that I traced back to being caused by starting Docker on the local gateway. Stopping Docker does not help, nor removing the bridge and ```netplan apply``` to recreate.
+I thought I was done with my OpenVPN configuration - but then I had failures that I traced back to being caused by starting Docker on the local gateway. Stopping Docker does not help, nor removing the bridge and ```netplan apply``` to recreate.
 
 Symptoms:
--DHCP failed for the cloud OpenVPN connection
--Ping from a second local system to the cloud bridge fails (gateway-to-gateway ping works if I manually assign an IP)
+- DHCP failed for the cloud OpenVPN connection
+- Ping from a second local system to the cloud bridge fails (gateway-to-gateway ping works if I manually assign an IP)
 
 I can get things working without Docker installed, and once I ```sudo systemctl start docker``` pings stop working from the second local system.
 
@@ -69,7 +67,7 @@ If I flush the FORWARD chain, and change the policy to ACCEPT, ping starts worki
 sudo iptables -F FORWARD
 sudo iptables -P FORWARD ACCEPT
 ```
-What is strange is that prior to Docker, the bridged connections were not going through FORWARD, but after the are. A logged item in kern.log gave me a hint that Docker enabled bridged routing or some such. Upon further investigation, this might be br_netfilter. ebtables is empty, that's not it.
+What is strange is that prior to Docker, the bridged connections were not going through FORWARD, but after they are. A logged item in kern.log gave me a hint that Docker enabled bridged routing or some such. Upon further investigation, this might be br_netfilter. ebtables is empty, that's not it.
 
 Check this out after Docker:
 ```bash

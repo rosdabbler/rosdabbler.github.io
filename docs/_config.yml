@@ -22,7 +22,7 @@ baseurl: "/" # the subpath of your site, e.g. /blog
 url: "rosdabbler.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: rosdabbler
 #github_username:  rosdabbler
-minimal_mistakes_skin: "default" # "air", "aqua", "contrast", "dark", "default", "dirt", "neon", "mint", "plum" "sunrise"
+minimal_mistakes_skin: "air" # "air", "aqua", "contrast", "dark", "default", "dirt", "neon", "mint", "plum" "sunrise"
 search: true
 logo: "assets/images/BDBD-128x128circle.png"
 
@@ -34,6 +34,14 @@ permalink: /:categories/:title/
 paginate: 5 # amount of posts to show
 paginate_path: /page:num/
 timezone: "America/Los_Angeles"
+collections:
+  notes:
+    output: true
+  drafts:
+    output: true
+
+collections_dir:
+  collections
 
 include:
   - _pages

@@ -90,6 +90,7 @@ if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
     else
         echo "$ROS2_SOURCE" >> ~/.bashrc
     fi
+    source $ROS2_SOURCE
 fi
 
 # When Docker is running, it sets the default acceptance of the FORWARD chain to DENY,
@@ -128,6 +129,9 @@ CYCLONEDDS_URI='<General><NetworkInterfaceAddress>rosbridge</></>'
 EOF
 fi
 
+# also set these locally
+source /etc/environment
+
 # Additional packages which may help configure or debug networking
 sudo apt-get install -y \
   bridge-utils \
@@ -142,6 +146,7 @@ sudo sysctl -w net.ipv4.ip_forward=1
 
 # hostname
 sudo hostnamectl set-hostname rosovpn
+sudo systemctl restart avahi-daemon
 
 # set the default OPEN_URL with the current IP address
 if [[ -z "$OPENVPN_URL" ]]; then
@@ -163,13 +168,3 @@ sudo ovpn_genconfig -u udp://$OPENVPN_URL -t -d -D \
   -E "ifconfig-noexec" \
   -E "script-security 2" \
   -E "up \"${UP_COMMAND}\""
-
-# Initialization of the certificate server
-if [[ ! -d /etc/openvpn/pki ]]; then
-  echo " "
-  echo "Certificate service initialization. You'll need to create some passwords"
-  echo " "
-  sudo ovpn_initpki
-else
-  echo "PKI already present, skipping initialization"
-fi
