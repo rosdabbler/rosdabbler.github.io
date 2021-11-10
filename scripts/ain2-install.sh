@@ -27,7 +27,7 @@ if grep -q -F "$ROS2_SOURCE" ~/.bashrc; then
 else
   echo "$ROS2_SOURCE" >> ~/.bashrc
 fi
-source $ROS2_SOURCE
+$ROS2_SOURCE
 
 # Download kylemanna/openvpn docker install which has some nice scripts we will be using
 git clone https://github.com/kylemanna/docker-openvpn.git
