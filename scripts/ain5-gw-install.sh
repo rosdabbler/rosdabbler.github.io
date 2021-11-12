@@ -13,10 +13,42 @@ sudo apt-get update && sudo apt-get upgrade -y
 sudo systemctl isolate multi-user
 sudo systemctl set-default multi-user
 
+## Optional variables
+#
+# Disable ROS2 install in gateway, comment out to allow
+#ROSVPN_SKIP_ROS2=true
+# Disable Docker install in gateway, comment out to allow
+#ROSVPN_SKIP_DOCKER=true
+# Optional DNS name of gateway public IP address (will use acual IP if undefined)
+#OPENVPN_URL=vpn.rosdabbler.com
+
+# Required variables, request values if undefined
+get_or_set() {
+  local var=$1
+  local def=$2
+  local result=""
+  if [[ -z "${!var}" ]]; then
+    read -p "Enter ${var} [${def}] > " result
+    eval $var="${result:-$def}"
+    echo "$var = ${!var}"
+  fi
+}
+
+get_or_set ROSVPN_GATEWAY_VPN_IP 192.168.0.130/24
+
+# default ROSVPN_SECOND to true, then ensure needed variables
+: "${ROSVPN_SECOND:=true}
+if $ROSVPN_SECOND ; then
+    get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
+    get_or_set ROSVPN_SECOND_CLOUD_IP 172.31.1.12
+    get_or_set ROSVPN_VXLAN1_GATEWAY_VPN_IP 192.168.0.145
+    get_or_set ROSVPN_VXLAN1_SECOND_VPN_IP 192.168.0.146
+fi
+
 # prevent keyboard config request to user
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
 
-# Stuff we need to do install, or to fix if interrupted
+# Stuff we need for install, or to fix if interrupted
 sudo apt install -y nano git wget curl less
 
 # netplan configuration to create the bridge that ROS2 will use
