@@ -7,12 +7,6 @@
 # source ain5-configure 
 #
 
-sudo apt-get update && sudo apt-get upgrade -y
-
-# For AWS installs, make sure we are not wasting memory on graphics
-sudo systemctl isolate multi-user
-sudo systemctl set-default multi-user
-
 ## Optional variables
 #
 # Disable ROS2 install in gateway, comment out to allow
@@ -33,10 +27,13 @@ get_or_set() {
 }
 
 get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
-get_or_set ROSVPN_GATEWAY_LOCAL_IP 192.168.0.130/24
-get_or_set ROSVPN_VXLAN1_CLOUD_IP 172.31.1.12
-get_or_set ROSVPN_VXLAN1_GATEWAY_LOCAL_IP 192.168.0.145
-get_or_set ROSVPN_VXLAN1_ENDPOINT_LOCAL_IP 192.168.0.146
+get_or_set ROSVPN_VXLAN1_SECOND_VPN_IP 192.168.0.146
+
+sudo apt-get update && sudo apt-get upgrade -y
+
+# For AWS installs, make sure we are not wasting memory on graphics
+sudo systemctl isolate multi-user
+sudo systemctl set-default multi-user
 
 # prevent keyboard config request to user
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
@@ -45,7 +42,6 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
 sudo apt install -y nano git wget curl less
 
 # Create a VXLAN interface to a second system
-if [[ ! -z "$ROSVPN_VXLAN1" ]]; then
 cat << EOF | sudo tee /etc/networkd-dispatcher/routable.d/vxlan1
 #!/bin/bash
 WANT_IFACE=eth0
@@ -54,7 +50,7 @@ if [[ \$IFACE == "\$WANT_IFACE" ]]; then
     ip link del vxlan1
   fi
   ip link add vxlan1 type vxlan remote $ROSVPN_GATEWAY_CLOUD_IP local \$ADDR dev \$IFACE id 100 dstport 4789
-  ip a add $ROSVPN_VXLAN1_ENDPOINT_LOCAL_IP/30 dev vxlan1
+  ip a add $ROSVPN_VXLAN1_SECOND_VPN_IP/30 dev vxlan1
   ip link set vxlan1 up
   ip link set vxlan1 master rosbridge
 fi
@@ -65,7 +61,6 @@ sudo chmod +x /etc/networkd-dispatcher/routable.d/vxlan1
 sudo ip link set eth0 down
 sleep 5
 sudo ip link set eth0 up
-fi
 
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 
