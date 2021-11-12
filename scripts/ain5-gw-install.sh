@@ -37,7 +37,7 @@ get_or_set() {
 get_or_set ROSVPN_GATEWAY_VPN_IP 192.168.0.130/24
 
 # default ROSVPN_SECOND to true, then ensure needed variables
-: "${ROSVPN_SECOND:=true}
+: "${ROSVPN_SECOND:=true}"
 if $ROSVPN_SECOND ; then
     get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
     get_or_set ROSVPN_SECOND_CLOUD_IP 172.31.1.12
