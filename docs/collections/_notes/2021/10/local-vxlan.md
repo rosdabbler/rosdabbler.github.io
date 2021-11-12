@@ -3,7 +3,7 @@ title: "vxlan with ROS2 in local network"
 layout: archive
 author_profile: true
 tags: [networking]
-data: 2021-10-24
+date: 2021-10-24
 ---
 I want to experiment with setting up a vxlan in my local network, and see if ROS2 will work ver it.
 

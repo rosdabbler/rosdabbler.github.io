@@ -179,6 +179,9 @@ sudo ovpn_initpki
 Here you create keys for the Desktop Gateway that will connect to this Cloud OpenVPN server, and create the file you will need to login. You'll be asked for the password that you set earlier.
 ```bash
 sudo easyrsa build-client-full ros_local_gateway nopass
+```
+then
+```bash
 sudo ovpn_getclient ros_local_gateway > ros_local_gateway.ovpn
 ```
 
@@ -292,6 +295,8 @@ ubuntu@ip-172-31-20-12:~$ ip a show dev rosbridge
        valid_lft forever preferred_lft forever
 ```
 The link **rosbridge** now should have an ip address from the local network.
+
+But sometimes that does not work, particularly when I am doing a lot of configuration checks. There's some sort of interaction of this tunnel tap0 that seems to only be fixed by rebooting the Desktop Gateway. Try that.
 
 From the Desktop Gateway I can ping that address:
 ```bash
