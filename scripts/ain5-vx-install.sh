@@ -57,27 +57,7 @@ EOF
 
 # go ahead and create the bridge
 sudo netplan apply
-
-# Create a VXLAN interface to a second system
-cat << EOF | sudo tee /etc/networkd-dispatcher/routable.d/vxlan1
-#!/bin/bash
-WANT_IFACE=eth0
-if [[ \$IFACE == "\$WANT_IFACE" ]]; then
-  if [[ -d /sys/class/net/vxlan1 ]]; then
-    ip link del vxlan1
-  fi
-  ip link add vxlan1 type vxlan remote $ROSVPN_GATEWAY_CLOUD_IP local \$ADDR dev \$IFACE id 100 dstport 4789
-  ip a add $ROSVPN_VXLAN1_SECOND_VPN_IP/30 dev vxlan1
-  ip link set vxlan1 up
-  ip link set vxlan1 master rosbridge
-fi
-EOF
-
-sudo chmod +x /etc/networkd-dispatcher/routable.d/vxlan1
-# Create now
-sudo ip link set eth0 down
 sleep 5
-sudo ip link set eth0 up
 
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 
