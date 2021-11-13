@@ -27,7 +27,8 @@ get_or_set() {
 }
 
 get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
-get_or_set ROSVPN_VXLAN1_SECOND_VPN_IP 192.168.0.146
+get_or_set ROSVPN_SECOND_VPN_IP 192.168.0.131/24
+get_or_set ROSVPN_SECOND_CLOUD_IP 172.31.1.12
 
 sudo apt-get update && sudo apt-get upgrade -y
 
@@ -40,6 +41,22 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
 
 # Stuff we need for install, or to fix if interrupted
 sudo apt install -y nano git wget curl less
+
+# netplan configuration to create the bridge that ROS2 will use
+cat << EOF | sudo tee /etc/netplan/90-rosbridge.yaml
+network:
+  version: 2
+
+  tunnels:
+    gre1:
+      renderer: networkd
+      mode: gretap
+      remote: $ROSVPN_GATEWAY_CLOUD_IP
+      local: $ROSVPN_CLOUD_CLOUD_IP
+EOF
+
+# go ahead and create the bridge
+sudo netplan apply
 
 # Create a VXLAN interface to a second system
 cat << EOF | sudo tee /etc/networkd-dispatcher/routable.d/vxlan1
@@ -104,13 +121,13 @@ if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
     else
         echo "$ROS2_SOURCE" >> ~/.bashrc
     fi
-    source $ROS2_SOURCE
+    source /opt/ros/galactic/setup.bash
 fi
 
 # Tell Cyclone DDS to use vxlan1
-if ! grep -q -F "OPENVPN" /etc/environment; then
+if ! grep -q -F "CYCLONEDDS_URI" /etc/environment; then
 cat <<EOF | sudo tee -a /etc/environment
-CYCLONEDDS_URI='<General><NetworkInterfaceAddress>vxlan1</></>'
+CYCLONEDDS_URI='<General><NetworkInterfaceAddress>gre1</></>'
 EOF
 fi
 
@@ -123,8 +140,9 @@ sudo apt-get install -y \
   dnsutils \
   iputils-ping \
   net-tools \
-  lsof
+  lsof \
+  avahi-daemon
 
 # hostname
-sudo hostnamectl set-hostname rosvx1
+sudo hostnamectl set-hostname rosvpn-second
 sudo systemctl restart avahi-daemon

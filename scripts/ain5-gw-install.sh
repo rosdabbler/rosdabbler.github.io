@@ -4,7 +4,9 @@
 # Install script starting for aws openvpn test. This script requires that variables be defined
 # before running, using:
 #
-# source ain5-configure 
+# source ain5-configure.sh
+#
+# of they will be asked for when run,
 #
 
 ## Optional variables
@@ -29,13 +31,8 @@ get_or_set() {
 }
 
 get_or_set ROSVPN_GATEWAY_VPN_IP 192.168.0.130/24
-
-# default ROSVPN_SECOND to true, then ensure needed variables
-: "${ROSVPN_SECOND:=true}"
-if $ROSVPN_SECOND ; then
-    get_or_set ROSVPN_SECOND_CLOUD_IP 172.31.1.12
-    get_or_set ROSVPN_VXLAN1_GATEWAY_VPN_IP 192.168.0.145
-fi
+get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
+get_or_set ROSVPN_SECOND_CLOUD_IP 172.31.1.12
 
 sudo apt-get update && sudo apt-get upgrade -y
 
@@ -54,9 +51,17 @@ cat << EOF | sudo tee /etc/netplan/90-rosbridge.yaml
 network:
   version: 2
 
+  tunnels:
+    gre1:
+      renderer: networkd
+      mode: gretap
+      remote: $ROSVPN_SECOND_CLOUD_IP
+      local: $ROSVPN_GATEWAY_CLOUD_IP
+
   bridges:
     rosbridge:
       mtu: 1500
+      interfaces: [gre1]
       parameters:
         stp: false
       addresses: [$ROSVPN_GATEWAY_VPN_IP]
@@ -66,29 +71,6 @@ EOF
 
 # go ahead and create the bridge
 sudo netplan apply
-
-# Create a VXLAN interface to a second system
-if $ROSVPN_SECOND ; then
-cat << EOF | sudo tee /etc/networkd-dispatcher/routable.d/vxlan1
-#!/bin/bash
-WANT_IFACE=eth0
-if [[ \$IFACE == "\$WANT_IFACE" ]]; then
-  if [[ -d /sys/class/net/vxlan1 ]]; then
-    ip link del vxlan1
-  fi
-  ip link add vxlan1 type vxlan remote $ROSVPN_SECOND_CLOUD_IP local \$ADDR dev \$IFACE id 100 dstport 4789
-  ip a add $ROSVPN_VXLAN1_GATEWAY_VPN_IP/30 dev vxlan1
-  ip link set vxlan1 up
-  ip link set vxlan1 master rosbridge
-fi
-EOF
-
-sudo chmod +x /etc/networkd-dispatcher/routable.d/vxlan1
-# Create now
-sudo ip link set eth0 down
-sleep 5
-sudo ip link set eth0 up
-fi
 
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 
@@ -142,7 +124,7 @@ if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
     else
         echo "$ROS2_SOURCE" >> ~/.bashrc
     fi
-    source $ROS2_SOURCE
+    source /opt/ros/galactic/setup.bash
 fi
 
 # Download kylemanna/openvpn docker install which has some nice scripts we will be using
@@ -180,14 +162,15 @@ sudo apt-get install -y \
   dnsutils \
   iputils-ping \
   net-tools \
-  lsof
+  lsof \
+  avahi-daemon
 
 # enable forwarding
 echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/99-ipforward.conf
 sudo sysctl -w net.ipv4.ip_forward=1
 
 # hostname
-sudo hostnamectl set-hostname rosovpn
+sudo hostnamectl set-hostname rosvpn-gw
 sudo systemctl restart avahi-daemon
 
 # set the default OPEN_URL with the current IP address
