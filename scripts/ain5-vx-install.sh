@@ -1,20 +1,27 @@
 # usage:
-# source ain5.install
+# source ain5-vx-install.sh
 #
 # Install script starting for aws openvpn test. This script requires that variables be defined
-# before running, using:
+# before running, or they will be asked for when the script is sourced.
 #
-# source ain5-configure 
+# Required variables:
 #
-
+# The IP address that the second instance should have in the IP subnet used by the robot.
+# In address/size format
+#ROSVPN_SECOND_VPN_IP=192.168.0.131/24
+# The IP address of the gateway instance in the cloud network.
+#ROSVPN_GATEWAY_CLOUD_IP=172.31.1.11
+# The IP address of the second computer in the cloud network.
+#ROSVPN_SECOND_CLOUD_IP=172.31.1.12
+#
 ## Optional variables
 #
-# Disable ROS2 install in gateway, comment out to allow
+# Disable ROS2 install
 #ROSVPN_SKIP_ROS2=true
-# Disable Docker install in gateway, comment out to allow
+# Disable Docker install
 #ROSVPN_SKIP_DOCKER=true
 
-# Required variables, request values if undefined
+# Required variables function, request values if undefined
 get_or_set() {
   local var=$1
   local def=$2
@@ -26,13 +33,13 @@ get_or_set() {
   fi
 }
 
-get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
 get_or_set ROSVPN_SECOND_VPN_IP 192.168.0.131/24
+get_or_set ROSVPN_GATEWAY_CLOUD_IP 172.31.1.11
 get_or_set ROSVPN_SECOND_CLOUD_IP 172.31.1.12
 
 sudo apt-get update && sudo apt-get upgrade -y
 
-# For AWS installs, make sure we are not wasting memory on graphics
+# For small AWS installs, make sure we are not wasting memory on graphics
 sudo systemctl isolate multi-user
 sudo systemctl set-default multi-user
 
@@ -42,8 +49,8 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
 # Stuff we need for install, or to fix if interrupted
 sudo apt install -y nano git wget curl less
 
-# netplan configuration to create the bridge that ROS2 will use
-cat << EOF | sudo tee /etc/netplan/90-rosbridge.yaml
+# netplan configuration to create a tunnel to the gateway
+cat << EOF | sudo tee /etc/netplan/90-gre1.yaml
 network:
   version: 2
 
@@ -52,16 +59,15 @@ network:
       renderer: networkd
       mode: gretap
       remote: $ROSVPN_GATEWAY_CLOUD_IP
-      local: $ROSVPN_CLOUD_CLOUD_IP
+      local: $ROSVPN_SECOND_CLOUD_IP
+      addresses: [$ROSVPN_SECOND_VPN_IP]
 EOF
 
 # go ahead and create the bridge
 sudo netplan apply
-sleep 5
 
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
-
-if [[ ! "$ROSVPN_SKIP_DOCKER" = true ]]; then
+if [[ ! "$ROSVPN_SKIP_DOCKER" == true ]]; then
     # Docker prelims
     sudo apt-get install \
         ca-certificates \
@@ -85,8 +91,7 @@ if [[ ! "$ROSVPN_SKIP_DOCKER" = true ]]; then
 fi
 
 ## Install ROS2
-
-if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
+if [[ ! "$ROSVPN_SKIP_ROS2" == true ]]; then
     # Ref: https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html
     if [[ ! -f /usr/share/keyrings/ros-archive-keyring.gpg ]]; then
       sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
@@ -104,7 +109,7 @@ if [[ ! "$ROSVPN_SKIP_ROS2" = true ]]; then
     source /opt/ros/galactic/setup.bash
 fi
 
-# Tell Cyclone DDS to use vxlan1
+# Tell Cyclone DDS to use gre1 tunnel with ROS2
 if ! grep -q -F "CYCLONEDDS_URI" /etc/environment; then
 cat <<EOF | sudo tee -a /etc/environment
 CYCLONEDDS_URI='<General><NetworkInterfaceAddress>gre1</></>'
@@ -114,9 +119,8 @@ fi
 # also set these locally
 source /etc/environment
 
-# Additional packages which may help configure or debug networking
+# Optional packages which may help configure or debug networking
 sudo apt-get install -y \
-  bridge-utils \
   dnsutils \
   iputils-ping \
   net-tools \
