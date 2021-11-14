@@ -1,6 +1,6 @@
 ---
 title: "Experiments replacing eth0 with a bridge on aws"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [aws, networking]
 date: 2021-10-28

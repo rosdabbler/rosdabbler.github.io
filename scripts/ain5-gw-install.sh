@@ -90,6 +90,20 @@ sudo iptables -A DOCKER-USER -i rosbridge -o rosbridge -j ACCEPT
 sudo iptables -A DOCKER-USER -j RETURN
 sudo iptables-save -f /etc/iptables/rules.v4
 
+# Add openvpn environment variables, and tell Cyclone DDS to use rosbridge
+if ! grep -q -F "OPENVPN" /etc/environment; then
+cat <<EOF | sudo tee -a /etc/environment
+OPENVPN=/etc/openvpn
+EASYRSA=/usr/share/easy-rsa
+EASYRSA_CRL_DAYS=3650
+EASYRSA_PKI=/etc/openvpn/pki
+CYCLONEDDS_URI='<General><NetworkInterfaceAddress>rosbridge</></>'
+EOF
+fi
+
+# also set these locally
+source /etc/environment
+
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 if [[ ! "$ROSVPN_SKIP_DOCKER" == true ]]; then
     # Docker prelims
@@ -148,20 +162,6 @@ sudo apt-get install -y \
 sudo cp -r docker-openvpn/bin/* /usr/local/bin/
 sudo chmod a+x /usr/local/bin/*
 sudo ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin
-
-# Add openvpn environment variables, and tell Cyclone DDS to use rosbridge
-if ! grep -q -F "OPENVPN" /etc/environment; then
-cat <<EOF | sudo tee -a /etc/environment
-OPENVPN=/etc/openvpn
-EASYRSA=/usr/share/easy-rsa
-EASYRSA_CRL_DAYS=3650
-EASYRSA_PKI=/etc/openvpn/pki
-CYCLONEDDS_URI='<General><NetworkInterfaceAddress>rosbridge</></>'
-EOF
-fi
-
-# also set these locally
-source /etc/environment
 
 # Optional packages which may help configure or debug networking
 sudo apt-get install -y \

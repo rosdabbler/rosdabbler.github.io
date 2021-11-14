@@ -66,6 +66,16 @@ EOF
 # go ahead and create the bridge
 sudo netplan apply
 
+# Tell Cyclone DDS to use gre1 tunnel with ROS2
+if ! grep -q -F "CYCLONEDDS_URI" /etc/environment; then
+cat <<EOF | sudo tee -a /etc/environment
+CYCLONEDDS_URI='<General><NetworkInterfaceAddress>gre1</></>'
+EOF
+fi
+
+# also set these locally
+source /etc/environment
+
 ##  Docker install see https://docs.docker.com/engine/install/ubuntu/
 if [[ ! "$ROSVPN_SKIP_DOCKER" == true ]]; then
     # Docker prelims
@@ -108,16 +118,6 @@ if [[ ! "$ROSVPN_SKIP_ROS2" == true ]]; then
     fi
     source /opt/ros/galactic/setup.bash
 fi
-
-# Tell Cyclone DDS to use gre1 tunnel with ROS2
-if ! grep -q -F "CYCLONEDDS_URI" /etc/environment; then
-cat <<EOF | sudo tee -a /etc/environment
-CYCLONEDDS_URI='<General><NetworkInterfaceAddress>gre1</></>'
-EOF
-fi
-
-# also set these locally
-source /etc/environment
 
 # Optional packages which may help configure or debug networking
 sudo apt-get install -y \

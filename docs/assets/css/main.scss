@@ -1,5 +1,4 @@
 ---
-# Only the main Sass file needs front matter (the dashes are enough)
 ---
 
 @charset "utf-8";
@@ -10,7 +9,15 @@
 //$text-color: #fc3a52;
 // END RKJ OVERRIDE
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
+// Override of skin variables
+
 @import "minimal-mistakes"; // main partials
+
+// selection so we can see selected code better
+::selection {
+    color: #ffffaa;
+    background-color: #660000
+}
 
 // See https://github.com/mmistakes/minimal-mistakes/discussions/1219
 html {
