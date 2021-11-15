@@ -1,6 +1,6 @@
 ---
 title: "AIN5 - Trying to get the scripts working"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [networking, aws]
 date: 2021-11-12github 

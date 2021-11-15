@@ -1,6 +1,6 @@
 ---
 title: "Netplan-NetworkManager Interactions"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [networking]
 date: 2021-11-01

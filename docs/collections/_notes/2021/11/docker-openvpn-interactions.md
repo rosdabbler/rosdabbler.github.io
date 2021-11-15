@@ -1,6 +1,6 @@
 ---
 title: "Docker-OpenVPN interactions"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [openvpn, docker]
 date: 2021-11-04

@@ -1,6 +1,6 @@
 ---
 title: "More OpenVPN DHCP tweaks"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [openvpn]
 date: 2021-11-03

@@ -1,6 +1,6 @@
 ---
 title: "Netplan Bridge Configuration"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [networking]
 date: 2021-10-31

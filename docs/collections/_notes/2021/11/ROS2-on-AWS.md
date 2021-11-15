@@ -1,6 +1,6 @@
 ---
 title: "ROS2 nodes on multiple AWS machines"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [networking, aws]
 date: 2021-11-09

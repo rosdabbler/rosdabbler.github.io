@@ -1,6 +1,6 @@
 ---
 title: "DHCP with an OpenVPN server bridge"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [openvpn]
 date: 2021-11-01

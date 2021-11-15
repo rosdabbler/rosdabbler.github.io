@@ -1,6 +1,6 @@
 ---
 title: "Setting up an Amazon Web Services (AWS) virtual machine usable by OpenVPS"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [aws, networking]
 date: 2021-10-26

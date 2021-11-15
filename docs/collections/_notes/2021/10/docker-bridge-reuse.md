@@ -1,6 +1,6 @@
 ---
 title: "Experiments reusing the docker bridge with openvpn"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [docker, openvpn]
 date: 2021-10-22

@@ -1,6 +1,6 @@
 ---
 title: "Experiments reusing the docker macvlan network"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [docker, networking]
 date: 2021-10-23

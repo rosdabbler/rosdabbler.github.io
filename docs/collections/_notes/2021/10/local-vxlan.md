@@ -1,6 +1,6 @@
 ---
 title: "vxlan with ROS2 in local network"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [networking]
 date: 2021-10-24

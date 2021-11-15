@@ -1,6 +1,6 @@
 ---
 title: "Netplan Apply Failure with tap0 and eno1"
-layout: archive
+layout: rkjnote
 author_profile: true
 tags: [openvpn, networking]
 date: 2021-11-09
