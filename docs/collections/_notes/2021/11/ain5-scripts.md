@@ -3,7 +3,7 @@ title: "AIN5 - Trying to get the scripts working"
 layout: rkjnote
 author_profile: true
 tags: [networking, aws]
-date: 2021-11-12github 
+date: 2021-11-12
 ---
 Earlier I installed a vxlan between two AWS instances along with an OpenVPN gateway. I managed to get it to work without Docker, but I went ahead anyway and did install scripts. Tried them they did not work. So I need to sort that out.
 

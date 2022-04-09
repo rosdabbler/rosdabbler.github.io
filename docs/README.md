@@ -3,7 +3,10 @@ This is intended for use with github.io
 
 To run locally:
 ```
-cd site
+cd docs
+# first time only
+bundle install
+# each time
 bundle exec jekyll serve
 ```
 
