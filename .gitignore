@@ -3,3 +3,5 @@ docs/.sass-cache
 docs/.jeykll-metadata
 docs/Gemfile.lock
 docs/collections/_drafts/*
+
+.vscode
